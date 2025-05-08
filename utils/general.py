@@ -98,12 +98,24 @@ def cal_concept(cov, cov_mean):
 def cal_class_MCP(model, concept_vecs, concept_means, dataloader, num_class, args):
     if args.global_rank in [-1, 0]:
         print("Calculate class MCP distributions!")
-    class_count = torch.zeros(num_class).cuda(args.global_rank)
-    # print(class_count)
-    class_node_resps = [torch.zeros([num_class] + [concept_vecs[0].shape[0]], requires_grad = False).cuda(args.global_rank),
-                        torch.zeros([num_class] + [concept_vecs[1].shape[0]], requires_grad = False).cuda(args.global_rank),
-                        torch.zeros([num_class] + [concept_vecs[2].shape[0]], requires_grad = False).cuda(args.global_rank),
-                        torch.zeros([num_class] + [concept_vecs[3].shape[0]], requires_grad = False).cuda(args.global_rank)]
+        
+    # class_count = torch.zeros(num_class).cuda(args.global_rank)
+
+    # device = args.device_id if args.device_id is not None and args.device_id != -1 else 'cpu'
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    class_count = torch.zeros(num_class, device=device)
+
+
+    # # print(class_count)
+    # class_node_resps = [torch.zeros([num_class] + [concept_vecs[0].shape[0]], requires_grad = False).cuda(args.global_rank),
+    #                     torch.zeros([num_class] + [concept_vecs[1].shape[0]], requires_grad = False).cuda(args.global_rank),
+    #                     torch.zeros([num_class] + [concept_vecs[2].shape[0]], requires_grad = False).cuda(args.global_rank),
+    #                     torch.zeros([num_class] + [concept_vecs[3].shape[0]], requires_grad = False).cuda(args.global_rank)]
+
+    class_node_resps = [torch.zeros([num_class] + [concept_vecs[0].shape[0]], requires_grad = False).cuda(args.global_rank).to(device),
+                        torch.zeros([num_class] + [concept_vecs[1].shape[0]], requires_grad = False).cuda(args.global_rank).to(device),
+                        torch.zeros([num_class] + [concept_vecs[2].shape[0]], requires_grad = False).cuda(args.global_rank).to(device),
+                        torch.zeros([num_class] + [concept_vecs[3].shape[0]], requires_grad = False).cuda(args.global_rank).to(device)]
     
     pbar = enumerate(dataloader)
     if args.global_rank in [-1, 0]:

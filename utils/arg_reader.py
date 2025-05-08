@@ -13,7 +13,7 @@ def read_args():
 
     # training hyper parameters
     parser.add_argument("--local_rank", type = int, default = -1, help = "DDP parameter. (Don't modify !!)")
-    parser.add_argument("--devices", type = int, default = None, required = True, nargs = "+")
+    parser.add_argument("--device", type = int, default = None, required = True, nargs = "+")
     parser.add_argument("--epoch", type = int, default = 50)
     parser.add_argument("--optimizer", type = str, default = None, required = True, choices = ["adam", "sgd", "adamw"])
     parser.add_argument("--lr", type = float, default = 1e-4, help = "Learning rate")
@@ -57,7 +57,7 @@ def read_args():
     if cfg.basic_model == "resnet50":
         cfg.parameter_path = "../pretrained/resnet50.pth"
     elif cfg.basic_model == "resnet18":
-        cfg.parameter_path = "../pretrained/resnet18.pth"
+        cfg.parameter_path = "./pretrained_models/resnet18.pth"
     elif cfg.basic_model == "resnet34":
         cfg.parameter_path = "../pretrained/resnet34.pth"
     elif cfg.basic_model == "resnet50_relu":
@@ -95,8 +95,8 @@ def read_args():
         cfg.val_dataset_path = "/eva_data_4/bor/datasets/Animals_with_Attributes2/JPEGImages/seen/val"
     elif cfg.dataset_name == "Caltech101":
         cfg.category = 101
-        cfg.train_dataset_path = "/eva_data_4/bor/datasets/101_ObjectCategories/train"
-        cfg.val_dataset_path = "/eva_data_4/bor/datasets/101_ObjectCategories/val"
+        cfg.train_dataset_path = "./dataset/caltech_101/train" 
+        cfg.val_dataset_path = "./dataset/caltech_101/test"
     elif cfg.dataset_name == "Caltech101_s":
         cfg.category = 81
         cfg.train_dataset_path = "/eva_data_4/bor/datasets/101_ObjectCategories/seen/train"

@@ -11,3 +11,6 @@ pkl/
 __pycache__/
 
 cal_class_MCP_tmp/
+
+dataset/
+pretrained_models/
