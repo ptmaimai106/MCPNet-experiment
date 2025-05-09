@@ -59,6 +59,9 @@ def cal_cov_matrix(model, train_loader, args, post_name = "", saved = True):
                 torch.zeros(args.concept_per_layer[2], args.cha[2], 1, dtype = torch.float64).cuda(), 
                 torch.zeros(args.concept_per_layer[3], args.cha[3], 1, dtype = torch.float64).cuda()]
     
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
     if args.weighted:
         Sum_A = [torch.zeros(args.concept_per_layer[0], dtype = torch.float64).cuda(), 
                  torch.zeros(args.concept_per_layer[1], dtype = torch.float64).cuda(), 
@@ -77,6 +80,7 @@ def cal_cov_matrix(model, train_loader, args, post_name = "", saved = True):
     with torch.no_grad():
         for iteration, (img, label) in tqdm.tqdm(enumerate(train_loader), total = len(train_loader)):
             img = img.cuda()
+            # img = img.to(device)
             l1, l2, l3, l4 = model(img)
             features = [l1, l2, l3, l4]
             for layer_i, feat in enumerate(features):
@@ -125,7 +129,8 @@ if __name__ == "__main__":
 
     os.makedirs(f"./PCA_concept_specific_tmp/{args.case_name}/{args.basic_model}/", exist_ok = True)
     data_path, train_path, val_path, num_class = get_dataset(args.case_name)
-    
+
+
     if args.few_shot:
         data_path += "seen/"
     
