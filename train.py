@@ -441,32 +441,45 @@ if __name__ == '__main__':
     args.global_rank = 0 # Main process, or -1 if no CUDA
     args.local_rank = -1 # Not used in single GPU, conventionally -1 or 0
 
-    # check if it can run on gpu
-    # check_device likely returns the device string or ID
-    # Let's assume check_device returns a torch.device object or a cuda string like 'cuda:0' or -1 for CPU
-    device_obj = check_device(args.device, args.train_batch_size, args.val_batch_size)
-    
-    if isinstance(device_obj, str) and "cuda" in device_obj: # e.g. 'cuda:0'
-        args.device_id = torch.device(device_obj)
-        args.global_rank = 0 # GPU is available
-    elif isinstance(device_obj, torch.device) and device_obj.type == "cuda":
-        args.device_id = device_obj
-        args.global_rank = 0 # GPU is available
-    elif isinstance(device_obj, int) and device_obj != -1: # e.g. 0 for cuda:0
-        args.device_id = torch.device(f'cuda:{device_obj}')
-        args.global_rank = 0
-    else: # CPU
-        args.device_id = torch.device('cpu')
-        args.global_rank = -1 # No GPU or user specified CPU
+    print("CUDA available:", torch.cuda.is_available())
+ 
+
+    args.device_id = check_device(args.device, args.train_batch_size, args.val_batch_size)
 
     if args.device_id.type == 'cuda':
         torch.cuda.set_device(args.device_id)
+        args.global_rank = 0
         print(f"Using device: {args.device_id}")
     else:
+        args.global_rank = -1
         print("Using CPU")
-        args.global_rank = -1 # Ensure global_rank is -1 for CPU case
 
-    args.device_id = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # check if it can run on gpu
+    # check_device likely returns the device string or ID
+    # Let's assume check_device returns a torch.device object or a cuda string like 'cuda:0' or -1 for CPU
+    # device_obj = check_device(args.device, args.train_batch_size, args.val_batch_size)
+    
+    # if isinstance(device_obj, str) and "cuda" in device_obj: # e.g. 'cuda:0'
+    #     args.device_id = torch.device(device_obj)
+    #     args.global_rank = 0 # GPU is available
+    # elif isinstance(device_obj, torch.device) and device_obj.type == "cuda":
+    #     args.device_id = device_obj
+    #     args.global_rank = 0 # GPU is available
+    # elif isinstance(device_obj, int) and device_obj != -1: # e.g. 0 for cuda:0
+    #     args.device_id = torch.device(f'cuda:{device_obj}')
+    #     args.global_rank = 0
+    # else: # CPU
+    #     args.device_id = torch.device('cpu')
+    #     args.global_rank = -1 # No GPU or user specified CPU
+
+    # if args.device_id.type == 'cuda':
+    #     torch.cuda.set_device(args.device_id)
+    #     print(f"Using device: {args.device_id}")
+    # else:
+    #     print("Using CPU")
+    #     args.global_rank = -1 # Ensure global_rank is -1 for CPU case
+
+    # args.device_id = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Batch sizes are now direct, no division by world_size
     args.train_total_batch_size = args.train_batch_size

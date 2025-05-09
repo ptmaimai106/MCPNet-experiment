@@ -61,7 +61,7 @@ def read_args():
     elif cfg.basic_model == "resnet34":
         cfg.parameter_path = "../pretrained/resnet34.pth"
     elif cfg.basic_model == "resnet50_relu":
-        cfg.parameter_path = "../pretrained/resnet50.pth"
+        cfg.parameter_path = "./pretrained_models/resnet50-19c8e357.pth"
     elif cfg.basic_model == "resnet152":
         cfg.parameter_path = "../pretrained/resnet152.pth"
     elif cfg.basic_model == "convnext_base":

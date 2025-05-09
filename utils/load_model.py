@@ -3,6 +3,7 @@ import torch
 import importlib
 from torch.nn.parallel import DistributedDataParallel
 import sys
+import torch.distributed as dist
 
 def has_batchnorms(model):
     bn_types = (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.SyncBatchNorm)
@@ -51,9 +52,16 @@ def load_model(args):
         model = model_class.load_model(num_classes = args.category, basic_model = args.basic_model)
     
     # use SyncBatchNorm
-    if use_cuda and args.global_rank != -1 and has_batchnorms(model):
+    # if use_cuda and args.global_rank != -1 and has_batchnorms(model):
+    #     print("Using ", args.device_id)
+    #     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(args.device_id)
+
+    use_ddp = use_cuda and args.global_rank != -1 and dist.is_available() and dist.is_initialized()
+    if use_ddp and has_batchnorms(model):
         print("Using ", args.device_id)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(args.device_id)
+    else:
+        model = model.to(args.device_id)
 
     if "parameter_path" in args and args.parameter_path is not None:
         if args.global_rank in [-1, 0]:
@@ -61,10 +69,16 @@ def load_model(args):
         model = model_class.load_pretrained(args.parameter_path, model).to(args.device_id)
 
     # DDP mode
-    if use_cuda and args.global_rank != -1:
+    # if use_cuda and args.global_rank != -1:
+    #     if args.global_rank in [0]:
+    #         print("DDP mode")
+    #     model = DistributedDataParallel(model, device_ids = [args.local_rank])# , output_device = args.local_rank
+
+    if use_ddp:
         if args.global_rank in [0]:
             print("DDP mode")
-        model = DistributedDataParallel(model, device_ids = [args.local_rank])# , output_device = args.local_rank
+        model = DistributedDataParallel(model, device_ids=[args.local_rank])
+
 
     if args.resume:
         print("load resume weight : {}".format(args.weight_path))

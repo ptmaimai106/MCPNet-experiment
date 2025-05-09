@@ -5,8 +5,38 @@ from utils import info_log, main_process_first, prepare_transforms
 import torch
 import os
 
+# def create_dataloader(path, batch_size, shuffle, n_workers, rank, mode, args):
+#     with main_process_first(rank):
+#         data_transforms = prepare_transforms(args)
+#         if rank in [-1, 0]:
+#             print("{} data_transforms : ".format(mode))
+#             print(data_transforms)
+#         dataset = torchvision.datasets.ImageFolder(path, data_transforms[mode])
+
+#     batchsize = min(batch_size, len(dataset))
+#     sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle = shuffle) if rank != -1 else None
+#     num_workers = min([os.cpu_count() // args.world_size, batch_size if batch_size > 1 else 0, n_workers])  # number of workers
+#     loader = DataLoader(dataset,
+#                         batch_size = batch_size,
+#                         sampler = sampler if rank != -1 else None,
+#                         shuffle = shuffle if rank == -1 else None,
+#                         num_workers = num_workers,
+#                         pin_memory = True) 
+
+#     return loader, dataset 
+
 def create_dataloader(path, batch_size, shuffle, n_workers, rank, mode, args):
-    with main_process_first(rank):
+    # Check if distributed is available and initialized
+    use_dist = torch.distributed.is_available() and torch.distributed.is_initialized()
+
+    if use_dist and rank != -1:
+        with main_process_first(rank):
+            data_transforms = prepare_transforms(args)
+            if rank in [-1, 0]:
+                print("{} data_transforms : ".format(mode))
+                print(data_transforms)
+            dataset = torchvision.datasets.ImageFolder(path, data_transforms[mode])
+    else:
         data_transforms = prepare_transforms(args)
         if rank in [-1, 0]:
             print("{} data_transforms : ".format(mode))
@@ -14,16 +44,18 @@ def create_dataloader(path, batch_size, shuffle, n_workers, rank, mode, args):
         dataset = torchvision.datasets.ImageFolder(path, data_transforms[mode])
 
     batchsize = min(batch_size, len(dataset))
-    sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle = shuffle) if rank != -1 else None
-    num_workers = min([os.cpu_count() // args.world_size, batch_size if batch_size > 1 else 0, n_workers])  # number of workers
-    loader = DataLoader(dataset,
-                        batch_size = batch_size,
-                        sampler = sampler if rank != -1 else None,
-                        shuffle = shuffle if rank == -1 else None,
-                        num_workers = num_workers,
-                        pin_memory = True) 
+    sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=shuffle) if use_dist and rank != -1 else None
+    num_workers = min([os.cpu_count() // args.world_size, batch_size if batch_size > 1 else 0, n_workers])
 
-    return loader, dataset 
+    loader = DataLoader(dataset,
+                        batch_size=batch_size,
+                        sampler=sampler,
+                        shuffle=shuffle if sampler is None else None,
+                        num_workers=num_workers,
+                        pin_memory=True)
+
+    return loader, dataset
+
 
 def load_data(args):
     dataloader = []
